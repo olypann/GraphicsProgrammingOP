@@ -21,6 +21,10 @@ void mouseInput(GLFWwindow *window);
 float previousTime = 0.0f;  
 float deltaTime    = 0.0f;  
 
+float lightBlinkTimer = 0.0f;
+bool lightBlinking = false;
+glm::vec3 blinkingLightColor(1.0f, 0.87f, 0.7f);
+
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 bool isFirstPerson = true;
@@ -133,11 +137,16 @@ int main( void )
     
     Light lightSources;
 
+    //central light of the scene
+
+
     lightSources.addPointLight(
         glm::vec3(0.0f, 2.0f, 0.0f),          
         glm::vec3(1.0f, 0.87f, 0.7f),          
         1.0f, 0.05f, 0.02f                    
     );
+
+
     lightSources.addSpotLight(
         glm::vec3(-5.0f, 3.0f, -5.0f),        
         glm::vec3(0.0f, -1.0f, 0.0f),         
@@ -261,6 +270,41 @@ int main( void )
         
         camera.calculateMatrices();
         
+        float triggerRadius = 2.5f;
+        float floatSpeed = 1.0f;
+        float maxFloatHeight = 2.0f;
+
+        for (auto& obj : objects) {
+
+
+            if (obj.name == "cheese") {
+                glm::vec3 playerPos = isFirstPerson ? camera.eye : player->position;
+                float distance = glm::length(obj.position - playerPos);
+
+                if (distance < triggerRadius) {
+                    if (obj.position.y < maxFloatHeight) {
+                        obj.position.y += floatSpeed * deltaTime;
+                        if (obj.position.y > maxFloatHeight)
+                            obj.position.y = maxFloatHeight;
+                    }
+                    if (!lightBlinking) {
+                        lightBlinking = true;
+                        lightBlinkTimer = 2.0f;
+                    }
+                }
+                else {
+                    float groundY = 0.0f;
+                    if (obj.position.y > groundY) {
+                        obj.position.y -= floatSpeed * deltaTime;
+                        if (obj.position.y < groundY)
+                            obj.position.y = groundY;
+                    }
+                }
+            }
+        }
+
+        
+
 
         
         if (isFirstPerson) {
@@ -297,6 +341,62 @@ int main( void )
 
 
         glUseProgram(shaderID);
+
+
+
+
+
+        lightSources = Light();
+        if (lightBlinking) {
+            lightBlinkTimer -= deltaTime;
+
+            bool lightOn = fmod(glfwGetTime(), 0.6f) < 0.3f; 
+            blinkingLightColor = lightOn ? glm::vec3(1.0f, 0.87f, 0.7f) : glm::vec3(0.0f);
+
+            if (lightBlinkTimer <= 0.0f) {
+                lightBlinking = false;
+                blinkingLightColor = glm::vec3(1.0f, 0.87f, 0.7f); 
+            }
+        }
+        lightSources.addPointLight(
+            glm::vec3(0.0f, 2.0f, 0.0f),
+            blinkingLightColor,
+            1.0f, 0.05f, 0.02f
+        );
+
+
+        lightSources.addSpotLight(
+            glm::vec3(-5.0f, 3.0f, -5.0f),
+            glm::vec3(0.0f, -1.0f, 0.0f),
+            glm::vec3(1.0f, 0.0f, 0.0f), 
+            1.0f, 0.1f, 0.02f,
+            std::cos(Maths::radians(30.0f))
+        );
+
+        lightSources.addSpotLight(
+            glm::vec3(5.0f, 3.0f, -5.0f),
+            glm::vec3(0.0f, -1.0f, 0.0f),
+            glm::vec3(0.0f, 0.0f, 1.0f), 
+            1.0f, 0.1f, 0.02f,
+            std::cos(Maths::radians(30.0f))
+        );
+
+        lightSources.addSpotLight(
+            glm::vec3(-5.0f, 3.0f, 5.0f),
+            glm::vec3(0.0f, -1.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f), 
+            1.0f, 0.1f, 0.02f,
+            std::cos(Maths::radians(30.0f))
+        );
+
+        lightSources.addSpotLight(
+            glm::vec3(5.0f, 3.0f, 5.0f),
+            glm::vec3(0.0f, -1.0f, 0.0f),
+            glm::vec3(1.0f, 1.0f, 0.0f), 
+            1.0f, 0.1f, 0.02f,
+            std::cos(Maths::radians(30.0f))
+        );
+
         
         lightSources.toShader(shaderID, camera.view);
         
