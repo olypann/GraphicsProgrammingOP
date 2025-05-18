@@ -105,28 +105,29 @@ int main( void )
     
     glUseProgram(shaderID);
     
-    Model teapot("../assets/cheese.obj");
+    Model cheese("../assets/cheese.obj");
     Model sphere("../assets/sphere.obj");
 
     Model rat("../assets/rat.obj");
     
-    teapot.addTexture("../assets/yellow.bmp", "diffuse");
-    teapot.addTexture("../assets/diamond_normal.png", "normal");
-    teapot.addTexture("../assets/neutral_specular.png", "specular");
+    cheese.addTexture("../assets/yellow.bmp", "diffuse");
+    cheese.addTexture("../assets/diamond_normal.png", "normal");
+    cheese.addTexture("../assets/neutral_specular.png", "specular");
 
     rat.addTexture("../assets/fur.bmp", "diffuse");
     rat.addTexture("../assets/diamond_normal.png", "normal");
     rat.addTexture("../assets/neutral_specular.png", "specular");
     
-    teapot.ka = 0.2f;
-    teapot.kd = 0.7f;
-    teapot.ks = 1.0f;
-    teapot.Ns = 20.0f;
+    cheese.ka = 0.2f;
+    cheese.kd = 0.7f;
+    cheese.ks = 1.0f;
+    cheese.Ns = 20.0f;
 
     rat.ka = 0.2f;
     rat.kd = 0.7f;
     rat.ks = 1.0f;
     rat.Ns = 20.0f;
+
 
 
     
@@ -177,7 +178,7 @@ int main( void )
     
     
 
-    glm::vec3 teapotPositions[] = {
+    glm::vec3 cheesePositions[] = {
         glm::vec3(-5.0f, 0.0f, -5.0f),  
         glm::vec3(5.0f, 0.0f, -5.0f),  
         glm::vec3(-5.0f, 0.0f,  5.0f), 
@@ -188,10 +189,10 @@ int main( void )
 
     
     Object object;
-    object.name = "teapot";
+    object.name = "cheese";
     
     for (unsigned int i = 0; i < 4; i++) {
-        object.position = teapotPositions[i];
+        object.position = cheesePositions[i];
         object.rotation = glm::vec3(1.0f, 1.0f, 1.0f);
         object.scale = glm::vec3(0.75f, 0.75f, 0.75f);
         object.angle = Maths::radians(20.0f * i);
@@ -311,8 +312,8 @@ int main( void )
             glUniformMatrix4fv(glGetUniformLocation(shaderID, "MVP"), 1, GL_FALSE, &MVP[0][0]);
             glUniformMatrix4fv(glGetUniformLocation(shaderID, "MV"), 1, GL_FALSE, &MV[0][0]);
             
-            if (objects[i].name == "teapot")
-                teapot.draw(shaderID);
+            if (objects[i].name == "cheese")
+                cheese.draw(shaderID);
 
             if (objects[i].name == "floor")
                 floor.draw(shaderID);
@@ -334,7 +335,7 @@ int main( void )
     }
     
     // clean up
-    teapot.deleteBuffers();
+    cheese.deleteBuffers();
     rat.deleteBuffers();
 
     glDeleteProgram(shaderID);
@@ -425,13 +426,13 @@ void keyboardInput(GLFWwindow *window)
     glm::vec3 playerMax = camera.eye + glm::vec3(0.25f, 1.8f, 0.25f);
 
     for (const Object& obj : objects) {
-        if (obj.name == "teapot") {
-            glm::vec3 teapotMin = obj.position - obj.scale * 0.5f;
-            glm::vec3 teapotMax = obj.position + obj.scale * 0.5f;
+        if (obj.name == "cheese") {
+            glm::vec3 cheeseMin = obj.position - obj.scale * 0.5f;
+            glm::vec3 cheeseMax = obj.position + obj.scale * 0.5f;
 
-            bool collisionX = playerMax.x >= teapotMin.x && playerMin.x <= teapotMax.x;
-            bool collisionY = playerMax.y >= teapotMin.y && playerMin.y <= teapotMax.y;
-            bool collisionZ = playerMax.z >= teapotMin.z && playerMin.z <= teapotMax.z;
+            bool collisionX = playerMax.x >= cheeseMin.x && playerMin.x <= cheeseMax.x;
+            bool collisionY = playerMax.y >= cheeseMin.y && playerMin.y <= cheeseMax.y;
+            bool collisionZ = playerMax.z >= cheeseMin.z && playerMin.z <= cheeseMax.z;
 
             if (collisionX && collisionY && collisionZ) {
                 if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -448,6 +449,7 @@ void keyboardInput(GLFWwindow *window)
         }
     }
 }
+
 
 void mouseInput(GLFWwindow *window)
 {
@@ -467,3 +469,76 @@ void mouseInput(GLFWwindow *window)
     camera.calculateCameraVectors();
 }
 
+
+
+//my own functions own functions to replace glm functions
+//function to normalize a vector (make it a unit vector)
+glm::vec3 normalize(const glm::vec3& v) {
+    float len = length(v);
+    if (len > 0) {
+        return glm::vec3(v.x / len, v.y / len, v.z / len);
+    }
+    return glm::vec3(0, 0, 0); // Return a zero vector if length is 0
+}
+
+//check if an object is in front of the player
+bool isInFront(const glm::vec3& viewDir, const glm::vec3& targetDir) {
+    return glm::dot(glm::normalize(viewDir), glm::normalize(targetDir)) > 0.0f;
+}
+
+//check if camera rays intersect with an object (if object is in view)
+bool rayIntersectsSphere(
+    const glm::vec3& rayOrigin,
+    const glm::vec3& rayDir,
+    const glm::vec3& sphereCenter,
+    float radius
+) {
+    glm::vec3 L = sphereCenter - rayOrigin;
+    float tca = glm::dot(L, glm::normalize(rayDir));
+    float d2 = glm::dot(L, L) - tca * tca;
+    return d2 <= radius * radius;
+}
+
+
+glm::mat4 LookAtPersonal(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) {
+    glm::vec3 zaxis = glm::normalize(eye - center);
+
+    glm::vec3 xaxis = glm::normalize(glm::cross(glm::normalize(up), zaxis));
+
+    glm::vec3 yaxis = glm::cross(zaxis, xaxis);
+
+    glm::mat4 view(1.0f);
+    view[0][0] = xaxis.x;
+    view[1][0] = xaxis.y;
+    view[2][0] = xaxis.z;
+
+    view[0][1] = yaxis.x;
+    view[1][1] = yaxis.y;
+    view[2][1] = yaxis.z;
+
+    view[0][2] = zaxis.x;
+    view[1][2] = zaxis.y;
+    view[2][2] = zaxis.z;
+
+    view[3][0] = -glm::dot(xaxis, eye);
+    view[3][1] = -glm::dot(yaxis, eye);
+    view[3][2] = -glm::dot(zaxis, eye);
+
+
+    return view;
+}
+
+
+glm::mat4 projectionPersonal(float left, float right, float bottom, float top, float near, float far) {
+    glm::mat4 result(1.0f);
+    result[0][0] = 2.0f / (right - left);
+    result[1][1] = 2.0f / (top - bottom);
+    result[2][2] = -2.0f / (far - near);
+
+    result[3][0] = -(right + left) / (right - left);
+    result[3][1] = -(top + bottom) / (top - bottom);
+    result[3][2] = -(far + near) / (far - near);
+
+
+    return result;
+}
