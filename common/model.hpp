@@ -1,3 +1,6 @@
+
+
+
 #pragma once
 
 #include <vector>
@@ -7,7 +10,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-// Texture struct
+// texture construct
 struct Texture
 {
     unsigned int id;
@@ -17,43 +20,45 @@ struct Texture
 class Model
 {
 public:
-    // Model attributes
+    // attribute list
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> uvs;
     std::vector<glm::vec3> normals;
+
+    std::vector<glm::vec3> tangents;
+    std::vector<glm::vec3> bitangents;
+
     std::vector<Texture>   textures;
+
     unsigned int textureID;
+
     float ka, kd, ks, Ns;
-    
-    // Constructor
-    Model(const char *path);
-    
-    // Draw model
-    void draw(unsigned int &shaderID);
-    
-    // Add textures
-    void addTexture(const char *path, const std::string type);
-    
-    // Cleanup
+
+    Model(const char* path);
+
+    void draw(unsigned int& shaderID);
+    void addTexture(const char* path, const std::string type);
+
     void deleteBuffers();
-    
+
 private:
-    
-    // Array buffers
+
+    // buffers
     unsigned int VAO;
     unsigned int vertexBuffer;
     unsigned int uvBuffer;
     unsigned int normalBuffer;
-    
-    // Load .obj file method
-    bool loadObj(const char *path,
-                 std::vector<glm::vec3> &inVertices,
-                 std::vector<glm::vec2> &inUVs,
-                 std::vector<glm::vec3> &inNormals);
-    
-    // Setup buffers
+
+    unsigned int tangentBuffer;
+    unsigned int bitangentBuffer;
+
+    bool loadObj(const char* path,
+        std::vector<glm::vec3>& inVertices,
+        std::vector<glm::vec2>& inUVs,
+        std::vector<glm::vec3>& inNormals);
+
     void setupBuffers();
-    
-    // Load texture
-    unsigned int loadTexture(const char *path);
+    unsigned int loadTexture(const char* path);
+
+    void calculateTangents();
 };

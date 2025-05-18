@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <vector>
+
 #include <fstream>
 #include <sstream>
 
@@ -11,11 +12,10 @@ unsigned int LoadShaders(const char *vertex_file_path,
                          const char *fragment_file_path)
 {
 
-    // Create the shaders
+    // shader creation
     unsigned int VertexShaderID   = glCreateShader(GL_VERTEX_SHADER);
     unsigned int FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
-    // Read the Vertex Shader code from the file
     std::string VertexShaderCode;
     std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
     if(VertexShaderStream.is_open()){
@@ -32,13 +32,13 @@ unsigned int LoadShaders(const char *vertex_file_path,
         return 0;
     }
 
-    // Read the Fragment Shader code from the file
     std::string FragmentShaderCode;
     std::ifstream FragmentShaderStream(fragment_file_path, std::ios::in);
     if(FragmentShaderStream.is_open())
     {
         std::stringstream sstr;
         sstr << FragmentShaderStream.rdbuf();
+
         FragmentShaderCode = sstr.str();
         FragmentShaderStream.close();
     }
